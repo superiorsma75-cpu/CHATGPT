@@ -1,110 +1,96 @@
-text-to-video-ultimate/
-├── index.html
-├── style.css
-├── script.js
-└── ffmpeg.min.js
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Text to Video PRO+</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+<title>AI Video Player</title>
+<style>
+body {
+  background: #0f172a;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  width: 700px;
+  text-align: center;
+}
+
+canvas {
+  background: black;
+  margin-top: 15px;
+  border-radius: 10px;
+}
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #00ffcc;
+}
+</style>
 </head>
 <body>
 
-<div class="app">
-<h1>🎬 Text to Video PRO+</h1>
-
-<textarea id="textInput" placeholder="Masukkan teks..."></textarea>
-
-<button onclick="generate()">Buat Video MP4 + Subtitle</button>
-
-<canvas id="canvas" width="640" height="360"></canvas>
-
-<p id="status"></p>
-<a id="download" download="video.mp4">⬇ Download MP4</a>
+<div class="container">
+  <h1>🤖 AI Generated Video</h1>
+  <canvas id="canvas" width="640" height="360"></canvas>
+  <div class="subtitle" id="subtitle"></div>
 </div>
 
-<script src="script.js"></script>
-</body>
-</html>
-const { createFFmpeg, fetchFile } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: true });
-
+<script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-const status = document.getElementById("status");
-const download = document.getElementById("download");
+const subtitle = document.getElementById("subtitle");
 
-async function generate(){
-    const text = textInput.value;
-    speak(text);
+const text =
+"Selamat datang. Ini adalah contoh video AI yang dibuat menggunakan HTML, JavaScript, dan suara otomatis.";
 
-    status.innerText = "🎥 Merekam video...";
-    const stream = canvas.captureStream(30);
-    const recorder = new MediaRecorder(stream);
-    let chunks = [];
+let x = canvas.width;
+let frame = 0;
 
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.start();
-
-    let x = canvas.width;
-    let frames = 0;
-
-    const anim = setInterval(()=>{
-        ctx.fillStyle="black";
-        ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle="white";
-        ctx.font="30px Arial";
-        ctx.fillText(text,x,canvas.height/2);
-        x -= 2;
-        frames++;
-
-        if(frames>300){
-            clearInterval(anim);
-            recorder.stop();
-        }
-    },33);
-
-    recorder.onstop = async ()=>{
-        status.innerText = "⚙️ Konversi ke MP4...";
-        const webmBlob = new Blob(chunks,{type:"video/webm"});
-
-        // Subtitle otomatis
-        const srt = generateSRT(text);
-
-        if(!ffmpeg.isLoaded()) await ffmpeg.load();
-
-        ffmpeg.FS('writeFile','video.webm',await fetchFile(webmBlob));
-        ffmpeg.FS('writeFile','sub.srt',new TextEncoder().encode(srt));
-
-        await ffmpeg.run(
-            '-i','video.webm',
-            '-vf','subtitles=sub.srt',
-            '-c:v','libx264',
-            '-pix_fmt','yuv420p',
-            'output.mp4'
-        );
-
-        const mp4 = ffmpeg.FS('readFile','output.mp4');
-        const mp4Blob = new Blob([mp4.buffer],{type:'video/mp4'});
-
-        download.href = URL.createObjectURL(mp4Blob);
-        download.style.display="block";
-        status.innerText="✅ Video MP4 siap!";
-    };
+// AI VOICE
+function speakAI(text){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "id-ID";
+  u.rate = 0.95;
+  u.pitch = 1;
+  speechSynthesis.speak(u);
 }
 
-function generateSRT(text){
-    return `1
-00:00:00,000 --> 00:00:10,000
-${text}
-`;
+// VIDEO ANIMATION
+function playVideo(){
+  subtitle.innerText = text;
+
+  const anim = setInterval(() => {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.font = "32px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("AI VIDEO DEMO", canvas.width/2, 80);
+
+    ctx.font = "24px Arial";
+    ctx.fillText(text, x, canvas.height/2);
+
+    x -= 2;
+    frame++;
+
+    if(frame > 300){
+      clearInterval(anim);
+    }
+  }, 33);
 }
 
-function speak(text){
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "id-ID";
-    speechSynthesis.speak(u);
-}
+// AUTO PLAY
+setTimeout(() => {
+  speakAI(text);
+  playVideo();
+}, 500);
+</script>
+
+</body>
+</html>
